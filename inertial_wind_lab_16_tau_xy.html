@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#071b2a">
+<title>洋流學互動實驗｜南風風應力與自由慣性運動</title>
+<style>
+:root{color-scheme:dark;--bg:#071827;--panel:#0c293c;--edge:#31586f;--ink:#edf8ff;--sub:#b7d0e0;--cyan:#62e5e7;--yellow:#ffcc83;--blue:#82adff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif;background:radial-gradient(ellipse 80% 40% at 85% -9%,#224f6e,transparent 73%),var(--bg)}
+main{max-width:1200px;margin:auto;padding:22px 15px 45px}
+.eyebrow{color:var(--cyan);font-size:11px;letter-spacing:1.8px;font-weight:850}
+h1{font-size:clamp(23px,3.4vw,35px);margin:6px 0 10px;letter-spacing:.2px}
+p{line-height:1.8}.lead{font-size:14px;color:var(--sub);max-width:960px;margin:0 0 20px}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,1fr);gap:16px;align-items:start}
+.panel{background:linear-gradient(158deg,#103148,#0b2536);border:1px solid var(--edge);border-radius:17px;overflow:hidden;box-shadow:0 10px 28px #00101c4d}
+.cardhead{padding:15px 16px 9px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between}
+.cardhead h2{margin:0;font-size:17px}.cardhead .note{font-size:12px;color:var(--sub)}
+.status{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:850;padding:7px 10px;border-radius:30px;border:1px solid #847049;background:#473a26;color:#ffe4ad}
+.status.off{background:#134554;border-color:#3e8796;color:#a3faff}
+.canvaswrap{padding:0 10px 12px}
+canvas{display:block;width:100%;height:auto;border-radius:11px;border:1px solid #31586b;background:#071e30}
+canvas#route{aspect-ratio:1.22} canvas#radii{aspect-ratio:2.1}
+/* 手動風力開關緊靠軌跡圖，避免學生在手機上反覆捲動 */
+.map-windbar{display:flex;justify-content:flex-end;align-items:center;margin:0 1px 9px;gap:10px}
+.wind-toggle{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:50px;min-width:152px;padding:9px 15px;border:1px solid #997a4b;border-radius:11px;background:#473a26;color:#ffe4ad;font:800 15px system-ui,-apple-system,"Noto Sans TC",sans-serif;cursor:pointer;touch-action:manipulation}
+.wind-toggle.off{border-color:#4a9bab;background:#134554;color:#a3faff}
+.wind-toggle .dot{width:10px;height:10px;border-radius:50%;background:#ffd68b;box-shadow:0 0 7px #ffd68b55}
+.wind-toggle.off .dot{background:#62e5e7;box-shadow:0 0 7px #62e5e766}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:0 13px 13px;font-size:12px;color:var(--sub)}
+.legend span:before{content:"";display:inline-block;width:20px;height:4px;border-radius:3px;vertical-align:middle;margin-right:6px;background:var(--yellow)}
+.legend span.coast:before{background:var(--cyan)}.legend span.mark:before{background:#fff}
+.readouts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 11px 13px}
+.readout{background:#143c50;border:1px solid #365d73;border-radius:10px;padding:10px 8px;min-width:0}
+.readout small{display:block;color:var(--sub);font-size:10.5px}.readout strong{display:block;margin-top:4px;font-size:clamp(15px,2vw,21px);font-variant-numeric:tabular-nums}.readout strong.fixed{color:#91f9cc}
+.readout em{display:block;font-style:normal;color:#a5c5d8;font-size:10px}
+.controlpanel{padding:16px 18px 17px}
+.controlpanel h2,.explain h2{font-size:18px;margin:0 0 5px}
+.control{margin:17px 0 18px}
+.control label{display:flex;align-items:center;justify-content:space-between;gap:7px;font-size:13px;font-weight:800}
+.control output{color:var(--cyan);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;margin:12px 0 5px;accent-color:var(--cyan);cursor:pointer}
+.ends{display:flex;justify-content:space-between;color:#93b2c3;font-size:11px}
+.micro{font-size:12px;color:var(--sub);line-height:1.7;margin:5px 0}
+.buttons{display:flex;gap:10px;margin:16px 0 10px}.buttons button{flex:1;border-radius:11px;border:1px solid #5d8798;background:#17435c;color:#fff;font-size:15px;font-weight:800;min-height:47px;cursor:pointer;padding:10px 5px}
+.buttons .primary{background:var(--cyan);border-color:var(--cyan);color:#062932}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.ratebar{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:16px 0 8px;font-size:12px;color:var(--sub)}
+select{border:1px solid #567d91;color:#f2faff;background:#19445a;padding:8px 9px;border-radius:8px}
+.hint{padding:10px 12px;border-left:3px solid #79f2bd;background:#14453d88;color:#caf6e1;font-size:12px;line-height:1.75;border-radius:0 10px 10px 0;margin-top:13px}
+.inset{padding:0 15px 12px;font-size:12px;color:var(--sub)}
+.entries{display:flex;gap:6px;flex-wrap:wrap;padding:0 12px 13px}
+.entry{font-size:11.5px;padding:5px 7px;border:1px solid #416e7f;background:#173d52;border-radius:7px;white-space:nowrap}
+.explain{padding:15px 18px;font-size:13px;margin-top:16px;color:#c5dce8}
+.formula{padding:11px;background:#082437;border-radius:9px;color:#a9ffff;text-align:center;letter-spacing:.4px;font-size:14px;line-height:1.9;border:1px solid #3e6274}
+.explain p{margin:10px 0}.explain strong{color:#fff}
+.alert{border-left:3px solid var(--yellow);padding:10px 12px;background:#4938214e;color:#ffe5bf;font-size:12px;line-height:1.7;border-radius:0 8px 8px 0}
+.foot{font-size:12px;color:#a5bfcd;margin:18px 1px 0}
+@media(max-width:970px){.layout{grid-template-columns:1fr}main{padding:15px 10px 35px}canvas#route{aspect-ratio:1.3}}
+@media(max-width:550px){canvas#route{aspect-ratio:.84}canvas#radii{aspect-ratio:1.45}.readouts{grid-template-columns:repeat(2,minmax(0,1fr))}.cardhead{padding:13px}.lead{font-size:13px}h1{font-size:23px}}
+
+/* 僅供計算模式使用的附加樣式，延續前版的色彩及佈局 */
+.readouts{grid-template-columns:repeat(3,minmax(0,1fr))}
+.science{font-variant-numeric:tabular-nums}
+@media(max-width:550px){.readouts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body><main>
+<div class="eyebrow">OCEAN CURRENTS · PHYSICS LAB 16</div>
+<h1>可調雙向風應力 → 流速 → 位移 → 慣性運動</h1>
+<p class="lead">學生可以分別調整 <strong>東西向風應力 τₓ</strong> 與 <strong>南北向風應力 τᵧ</strong>，並在軌跡圖旁手動切換風的 ON／OFF。風吹時依水平動量方程更新 u、v；關閉風的瞬間將 τₓ、τᵧ 都設成 0，<strong>流速不歸零</strong>，由科氏力繼續旋轉；再逐步積分算出距離與地理座標。</p>
+<div class="layout">
+<div>
+ <section class="panel">
+  <div class="cardhead"><h2>真實比例的水平水團軌跡</h2><div style="display:flex;align-items:center;gap:9px"><span class="status" id="phase">🌬 風應力作用</span><span class="note" id="cycle">第 1 次循環</span></div></div>
+  <p class="inset" style="padding-bottom:6px;margin:0">北 ↑、東 →；座標採公尺積分後換算公里，<strong>東西南北同一比例尺</strong>。視野在接近邊緣時自動跟隨水團。</p>
+  <div class="canvaswrap"><div class="map-windbar"><button type="button" class="wind-toggle" id="windToggle" aria-pressed="true" aria-label="目前有風。點擊關閉風應力"><span class="dot" aria-hidden="true"></span><span id="windToggleLabel">🌬 風 ON · 點擊關閉</span></button></div><canvas id="route" aria-label="由風應力與科氏力方程積分得到的水團軌跡"></canvas></div>
+  <div class="legend"><span>風 ON：τₓ、τᵧ 依設定</span><span class="coast">風 OFF：τₓ = τᵧ = 0</span><span class="mark">當下水團位置與速度方向</span></div>
+  <div class="readouts">
+   <div class="readout"><small>目前水團速率 |U|</small><strong class="fixed" id="speed">0.60</strong><em>m/s（停風期間守恆）</em></div>
+   <div class="readout"><small>東向流速 u</small><strong id="u">0.000</strong><em>m/s（向西為負）</em></div>
+   <div class="readout"><small>北向流速 v</small><strong id="v">0.600</strong><em>m/s（向南為負）</em></div>
+   <div class="readout"><small>水團位置</small><strong id="lat">10.000°N</strong><em id="lon">130.000°E</em></div>
+   <div class="readout"><small>局地理論半徑 |U| / |f|</small><strong id="radius">—</strong><em>km</em></div>
+   <div class="readout"><small>慣性週期 T</small><strong id="period">—</strong><em>小時</em></div>
+  </div>
+ </section>
+ <section class="panel" style="margin-top:16px">
+  <div class="cardhead"><h2>歷次停風瞬間的理論半徑（參考）</h2><span class="note">同一比例尺；不參與軌跡計算</span></div>
+  <div class="canvaswrap"><canvas id="radii" aria-label="停風時的瞬時慣性半徑同尺度比較"></canvas></div>
+  <div class="inset" id="comparisonSummary">第一次按 OFF 時記錄理論半徑（不影響軌跡）。</div>
+  <div id="recordList" class="entries"><span class="micro">尚未發生停風</span></div>
+ </section>
+</div>
+<div>
+ <section class="panel controlpanel">
+  <h2>學生操作區</h2>
+  <div class="control"><label for="tauX">東西向風應力 τₓ <output id="tauXValue">0.000 N/m²</output></label><input id="tauX" type="range" min="-0.25" max="0.25" step="0.005" value="0"><div class="ends"><span>−0.25（向西）</span><span>0（無）</span><span>+0.25（向東）N/m²</span></div></div>
+  <div class="control"><label for="tau">南北向風應力 τᵧ <output id="tauValue">0.040 N/m²</output></label><input id="tau" type="range" min="0" max="0.25" step="0.005" value="0.04"><div class="ends"><span>0 N/m²</span><span>0.25 N/m²（向北）</span></div><p class="micro">τₓ 向東為正、向西為負；τᵧ 維持原本 0–0.25 N/m² 的範圍。直接調整風應力，不把風速當作水流速度。風 OFF 時 τₓ、τᵧ 同時歸零。</p></div>
+  <div class="control"><label for="latitude">起始緯度 <output id="latitudeValue">10°N</output></label><input id="latitude" type="range" min="5" max="60" step="1" value="10"><div class="ends"><span>5°N</span><span>60°N</span></div></div>
+  <div class="buttons"><button class="primary" id="play">▶ 開始播放</button><button id="reset">↺ 重設</button></div>
+  <div class="ratebar"><label for="rate">動畫播放倍率</label><select id="rate"><option value="6">慢速</option><option value="12" selected>正常</option><option value="24">快速</option><option value="48">超快速</option></select></div>
+  <div class="hint"><strong>觀察重點：</strong>風吹期間 |U| 一般會改變；學生按下 OFF 後 τ = 0，<strong>u、v 連續，但加速度可立即跳變</strong>。停風後的速率 |U| 維持不變，而旋轉方向持續變化。</div>
+ </section>
+ <section class="panel explain">
+  <h2>從加速度積分到座標</h2>
+  <div class="formula">du/dt = f·v + τₓ/(ρwH)<br>dv/dt = −f·u + τᵧ/(ρwH)<br>dx/dt = u，dy/dt = v<br>f = 2Ω sin φ（R = |U|/|f| 僅作參考）</div>
+  <p>不論風 ON／OFF，水團軌跡均<strong>只由運動方程</strong>透過四階 Runge–Kutta（RK4）積分 u、v、x、y 得到；<strong>不使用 R = |U|/|f| 生成路徑</strong>，並用 <strong>dφ/dt = v/Rₑ</strong>、<strong>dλ/dt = u/(Rₑ cosφ)</strong> 求緯經度。</p>
+  <p class="science" id="values">參數：ρw = 1025 kg/m³，H = 20 m，Ω = 7.2921159×10⁻⁵ s⁻¹。</p>
+  <p class="science" id="elapsed">模擬時間：0.0 h；累積位移：東 0.0 km，北 0.0 km。</p>
+  <div class="alert"><strong>模型假設：</strong>均勻混合層、固定 H、無摩擦、無背景流及水平壓力梯度；起始 (u,v) = (0,0.60) m/s，起始經度 130°E 僅作座標參考。風開啟時採使用者指定的恆定 τₓ、τᵧ，關閉瞬間兩分量皆為 0。<strong>此模型不保證持續西北漂移或北移 500 km</strong>；軌跡由方程自行決定。風何時再開啟由學生自行決定，不會自動切換。</div>
+ </section>
+</div>
+</div>
+<p class="foot">本工具為獨立 HTML，手機 Chrome 可離線使用；沒有使用假想的手繪迴旋路徑。起始緯度與兩個風應力分量可調，風吹時間由學生自行切換開關決定；如需真實西北漂移，須另加入可檢驗的背景流或風場。</p>
+</main>
+<script>
+(()=>{'use strict';
+const OMEGA=7.2921159e-5,RE=6371000,RHO=1025,H=20,TWO=2*Math.PI,DEG=Math.PI/180,LON0=130,DTMAX=180;
+const $=id=>document.getElementById(id),tauIn=$('tau'),tauXIn=$('tauX'),latIn=$('latitude'),rateIn=$('rate'),a=$('route'),b=$('radii'),windToggle=$('windToggle');
+const colors=['#68e8ef','#ffd68b','#a9c4ff','#ddabed','#9ce5ba','#ff9eaf','#bce87a'];
+let st,run=false,raf=0,last=0;
+const fmt=(v,n=2)=>Number(v).toFixed(n), clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const fAt=phi=>2*OMEGA*Math.sin(phi), speed=s=>Math.hypot(s.u,s.v);
+function cfg(){return {tau:+tauIn.value,tauX:+tauXIn.value,lat0:+latIn.value};}
+function labels(){const c=cfg();$('tauValue').textContent=`${fmt(c.tau,3)} N/m²`;$('tauXValue').textContent=`${fmt(c.tauX,3)} N/m²`;$('latitudeValue').textContent=`${c.lat0}°N`;}
+// Exact governing ODE: uniform mixed layer; earth curvature affects both f and coordinate integration.
+function derivatives(q,tauX,tauY){
+ const f=fAt(q.phi),ax=tauX/(RHO*H),ay=tauY/(RHO*H);
+ return {u:f*q.v+ax,v:-f*q.u+ay,x:q.u,y:q.v,phi:q.v/RE,lambda:q.u/(RE*Math.max(.03,Math.cos(q.phi)))};
+}
+function combine(q,k,h){return {u:q.u+h*k.u,v:q.v+h*k.v,x:q.x+h*k.x,y:q.y+h*k.y,phi:q.phi+h*k.phi,lambda:q.lambda+h*k.lambda};}
+function stepRK4(q,dt,tauX,tauY){
+ const k1=derivatives(q,tauX,tauY),k2=derivatives(combine(q,k1,dt/2),tauX,tauY),k3=derivatives(combine(q,k2,dt/2),tauX,tauY),k4=derivatives(combine(q,k3,dt),tauX,tauY);
+ for(const key of ['u','v','x','y','phi','lambda'])q[key]+=dt*(k1[key]+2*k2[key]+2*k3[key]+k4[key])/6;
+}
+function record(){st.path.push({x:st.q.x,y:st.q.y}); if(st.path.length>28000)st.path=st.path.filter((p,i)=>i%2===0);}
+function reset(){run=false;if(raf)cancelAnimationFrame(raf);raf=0;$('play').textContent='▶ 開始播放'; const c=cfg();
+ st={cfg:c,q:{u:0,v:.60,x:0,y:0,phi:c.lat0*DEG,lambda:LON0*DEG},phase:'wind',phaseSec:0,totalSec:0,angle:0,cycle:1,path:[{x:0,y:0}],segments:[],rings:[],coastStart:null,windStart:{x:0,y:0},ended:false};
+ labels(); update(); draw();
+}
+function beginCoast(){const q=st.q,f=fAt(q.phi),sp=speed(q);st.segments.push({phase:'wind',points:st.path.slice()});
+ st.rings.push({lat:q.phi/DEG,r:sp/Math.abs(f),U:sp,cycle:st.cycle,color:colors[(st.cycle-1)%colors.length]});
+ st.coastStart=sp;st.phase='coast';st.phaseSec=0;st.angle=0;st.path=[{x:q.x,y:q.y}];}
+function beginWind(){st.segments.push({phase:'coast',points:st.path.slice()});st.phase='wind';st.phaseSec=0;st.angle=0;st.cycle++;st.windStart={x:st.q.x,y:st.q.y};st.path=[{x:st.q.x,y:st.q.y}];}
+function advance(sec){let n=0;while(sec>1e-8&&n++<50000&&!st.ended){
+ const c=st.cfg,wind=st.phase==='wind';let dt=Math.min(sec,DTMAX);
+ const f0=fAt(st.q.phi),tauX=wind?c.tauX:0,tauY=wind?c.tau:0;
+ stepRK4(st.q,dt,tauX,tauY);const f1=fAt(st.q.phi);
+ st.phaseSec+=dt;st.totalSec+=dt;if(!wind)st.angle+=dt*(f0+f1)/2;sec-=dt;
+ if(st.q.phi<0.3*DEG||st.q.phi>80*DEG){st.ended=true;run=false;$('play').textContent='已到緯度範圍邊界';}
+ // sample at most one point per 3 minutes simulation time
+ record();
+ // 風只由學生手動切換；此處不做任何自動轉換。
+ }
+}
+function viewport(can){const b=can.getBoundingClientRect(),w=Math.max(1,Math.round(b.width)),h=Math.max(1,Math.round(b.height)),d=Math.min(window.devicePixelRatio||1,2);
+ if(can.width!==Math.round(w*d)||can.height!==Math.round(h*d)){can.width=Math.round(w*d);can.height=Math.round(h*d);}
+ const g=can.getContext('2d');g.setTransform(d,0,0,d,0,0);g.clearRect(0,0,w,h);return {g,w,h};}
+function line(g,x,y,xx,yy,col='#46758a',sz=1,dash=[]){g.save();g.beginPath();g.moveTo(x,y);g.lineTo(xx,yy);g.strokeStyle=col;g.lineWidth=sz;g.setLineDash(dash);g.stroke();g.restore();}
+function text(g,t,x,y,col='#b7d0e0',size=12,align='left',weight=500){g.save();g.font=`${weight} ${size}px system-ui, sans-serif`;g.textAlign=align;g.fillStyle=col;g.fillText(t,x,y);g.restore();}
+function circle(g,x,y,r,col='#a9c4ff',sz=2,dash=[]){if(r<.01)return;g.save();g.beginPath();g.arc(x,y,r,0,TWO);g.strokeStyle=col;g.lineWidth=sz;g.setLineDash(dash);g.stroke();g.restore()}
+function poly(g,points,px,py,col,sz=3){if(points.length<2)return;g.save();g.beginPath();for(let i=0;i<points.length;i++){const p=points[i];if(i===0)g.moveTo(px(p.x),py(p.y));else g.lineTo(px(p.x),py(p.y));}g.lineWidth=sz;g.strokeStyle=col;g.stroke();g.restore();}
+function drawRoute(){const {g,w,h}=viewport(a),q=st.q,c=st.cfg;
+ g.fillStyle='#061d2b';g.fillRect(0,0,w,h);
+ // Map scale only: initial theoretical radius determines zoom, never particle motion.
+ const initR=.6/Math.max(fAt(c.lat0*DEG),1e-8)/1000;
+ const scale=clamp(Math.min(w*.56/(6*Math.max(8,initR)),h*.63/(6*Math.max(8,initR))),.40,9);
+ const xbase=w*.20,ybase=h*.75,xkm=q.x/1000,ykm=q.y/1000;
+ // Only translate camera after the water particle approaches an edge (both east/west and north/south).
+ const cx= xkm> w*.68/scale ? xkm-w*.68/scale : xkm< -w*.12/scale ? xkm+w*.12/scale:0;
+ const cy= ykm> h*.64/scale ? ykm-h*.64/scale : ykm< -h*.17/scale ? ykm+h*.17/scale:0;
+ const px=x=>xbase+(x/1000-cx)*scale,py=y=>ybase-(y/1000-cy)*scale;
+ const stepKM=scale*100>50?100:scale*50>30?50:100;
+ for(let X=Math.floor((cx-xbase/scale)/stepKM)*stepKM;X<cx+(w-xbase)/scale+stepKM;X+=stepKM){const Xp=px(X*1000);line(g,Xp,0,Xp,h,'#1a3d50',1,[3,8]);if(Xp>10&&Xp<w-15)text(g,`${X} km`,Xp,h-10,'#6f99af',10,'center');}
+ for(let Y=Math.floor((cy-(h-ybase)/scale)/stepKM)*stepKM;Y<cy+ybase/scale+stepKM;Y+=stepKM){const Yp=py(Y*1000);line(g,0,Yp,w,Yp,'#21465b',1,[3,7]);if(Yp>24&&Yp<h-20)text(g,`${fmt(c.lat0+Y*1000/RE/DEG,2)}°N`,w-8,Yp-5,'#849fb0',10,'right');}
+ line(g,px(0),0,px(0),h,'#476778',1,[6,6]);line(g,0,py(0),w,py(0),'#476778',1,[6,6]);
+ for(const s of st.segments)poly(g,s.points,px,py,s.phase==='wind'?'#ffca83':'#62e5e7',3.1);
+ poly(g,st.path,px,py,st.phase==='wind'?'#ffcc83':'#62e5e7',4);
+ const posX=px(q.x),posY=py(q.y),sp=speed(q);
+ const ux=sp>1e-7?q.u/sp:0,uy=sp>1e-7?q.v/sp:1;
+ if(sp>1e-7){let length=39;line(g,posX,posY,posX+length*ux,posY-length*uy,'#f8ffe5',2.5);let ex=posX+length*ux,ey=posY-length*uy;line(g,ex,ey,ex-9*ux+5*uy,ey+9*uy+5*ux,'#f8ffe5',2);line(g,ex,ey,ex-9*ux-5*uy,ey+9*uy-5*ux,'#f8ffe5',2);}
+ g.save();g.beginPath();g.arc(posX,posY,6,0,TWO);g.shadowColor='#ffffff';g.shadowBlur=10;g.fillStyle='#fff';g.fill();g.restore();
+ text(g,'N ↑',11,24,'#b1edf0',14,'left',850);text(g,'E →',w-12,24,'#b1edf0',14,'right',850);
+ text(g,`τₓ = ${fmt(st.phase==='wind'?c.tauX:0,3)} · τᵧ = ${fmt(st.phase==='wind'?c.tau:0,3)} N/m²`,12,46,'#bdfbe5',12,'left',700);
+ const barKM=scale*50>48?50:100,bar=barKM*scale;
+ line(g,15,h-27,15+bar,h-27,'#bdd7e7',2);line(g,15,h-32,15,h-22,'#bdd7e7',2);line(g,15+bar,h-32,15+bar,h-22,'#bdd7e7',2);text(g,`${barKM} km`,15+bar/2,h-35,'#d6e8f2',11,'center');
+}
+function drawRadii(){const {g,w,h}=viewport(b),r=st.rings;
+ g.fillStyle='#071e2d';g.fillRect(0,0,w,h);
+ const initial=.6/Math.max(fAt(st.cfg.lat0*DEG),1e-7),max=Math.max(initial,...r.map(x=>x.r));
+ const factor=Math.min(w*.24,h*.37)/Math.max(100,max);
+ const x=w*.31,y=h*.53;
+ line(g,x-5,y,x+max*factor+25,y,'#355a6d',1);line(g,x,8,x,h-7,'#355a6d',1);
+ if(!r.length){circle(g,x,y,initial*factor,'#68819a',2,[5,6]);text(g,'等待第一次按 OFF…',w*.69,h*.43,'#b2cfdd',12,'center');}
+ for(let i=0;i<r.length;i++){let item=r[i];circle(g,x,y,item.r*factor,item.color,i===r.length-1?3.3:1.8,i===r.length-1?[]:[5,5]);}
+ r.slice(-5).forEach((item,i)=>{const Y=22+i*24;circle(g,w*.63-6,Y-5,4,item.color,2);text(g,`${fmt(item.lat,1)}°N  ${fmt(item.r/1000,2)} km`,w*.63+7,Y,'#e3f2f9',w<420?10:12,'left',750);});
+ text(g,'同一 km 比例尺',x,h-12,'#aecdda',11,'center');
+}
+function update(){const q=st.q,sp=speed(q),f=fAt(q.phi),rc=sp/Math.max(Math.abs(f),1e-8);
+ $('speed').textContent=fmt(sp,3);$('u').textContent=fmt(q.u,3);$('v').textContent=fmt(q.v,3);
+ $('lat').textContent=`${fmt(q.phi/DEG,3)}°N`;$('lon').textContent=`${fmt(((q.lambda/DEG%360)+360)%360,3)}°E`;
+ $('radius').textContent=fmt(rc/1000,2);$('period').textContent=fmt(TWO/Math.abs(f)/3600,1);
+ $('phase').textContent=st.phase==='wind'?'🌬 風應力作用':'🌀 停風：自由慣性';$('phase').className='status '+(st.phase==='coast'?'off':'');$('cycle').textContent=`第 ${st.cycle} 次循環`;
+  windToggle.classList.toggle('off',st.phase==='coast');windToggle.setAttribute('aria-pressed',String(st.phase==='wind'));windToggle.setAttribute('aria-label',st.phase==='wind'?'目前有風。點擊關閉風應力':'目前無風。點擊開啟風應力');$('windToggleLabel').textContent=st.phase==='wind'?'🌬 風 ON · 點擊關閉':'🌀 風 OFF · 點擊開啟';
+ $('elapsed').textContent=`模擬時間：${fmt(st.totalSec/3600,1)} h；累積位移：東 ${fmt(q.x/1000,2)} km，北 ${fmt(q.y/1000,2)} km。`;
+ const first=st.rings[0],newest=st.rings[st.rings.length-1];
+ $('comparisonSummary').textContent=first?`首個理論半徑 ${fmt(first.r/1000,2)} km → 最新 ${fmt(newest.r/1000,2)} km。僅供比較；實際軌跡由 RK4 積分決定。`:'第一次按 OFF 時記錄理論半徑（不影響軌跡）。';
+ $('recordList').innerHTML=st.rings.slice(-8).map(q=>`<span class="entry" style="border-color:${q.color}">${fmt(q.lat,2)}°N　R ${fmt(q.r/1000,2)} km</span>`).join('')||'<span class="micro">尚未發生停風</span>';
+}
+function draw(){drawRoute();drawRadii();}
+function frame(now){if(!run){raf=0;return;}let secs=Math.min(.15,Math.max(0,(now-last)/1000));last=now;advance(secs*(+rateIn.value)*3600);update();draw();raf=run?requestAnimationFrame(frame):0;}
+$('play').addEventListener('click',()=>{if(st.ended)return;run=!run;$('play').textContent=run?'Ⅱ 暫停':'▶ 繼續播放';if(run){last=performance.now();if(!raf)raf=requestAnimationFrame(frame);}});
+$('reset').addEventListener('click',reset);
+windToggle.addEventListener('click',()=>{if(st.ended)return;if(st.phase==='wind')beginCoast();else beginWind();update();draw();});
+for(const el of [tauXIn,tauIn,latIn])el.addEventListener('input',reset);
+window.addEventListener('resize',draw,{passive:true});
+// Exposed strictly for numeric verification and reproducible teaching tests; no external dependency.
+window.__lab16={snapshot:()=>({phase:st.phase,cycle:st.cycle,u:st.q.u,v:st.q.v,waterSpeed:speed(st.q),xKm:st.q.x/1000,yKm:st.q.y/1000,latitude:st.q.phi/DEG,longitude:st.q.lambda/DEG,tauActive:st.phase==='wind'?st.cfg.tau:0,tauXActive:st.phase==='wind'?st.cfg.tauX:0,elapsedHours:st.totalSec/3600,coastInitialSpeed:st.coastStart,rings:st.rings.map(r=>({lat:r.lat,rKm:r.r/1000,U:r.U}))}),advanceHours:(hrs)=>{advance(hrs*3600);update();draw();},reconfigure:(tau,lat,tauX)=>{if(tau!==undefined)tauIn.value=tau;if(lat!==undefined)latIn.value=lat;if(tauX!==undefined)tauXIn.value=tauX;reset();},toggleWind:()=>windToggle.click()};
+reset();
+})();
+</script>
+</body></html>
